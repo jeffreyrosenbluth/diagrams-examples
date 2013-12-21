@@ -1,11 +1,13 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
-import           Control.Monad (replicateM)
+import           Control.Monad                 (replicateM)
 import           Control.Monad.Random
 import           Data.Colour.Palette.ColorSet
-import           Data.List (zipWith, zipWith3)
+import           Data.List                     (zipWith, zipWith3)
+
 import           Diagrams.Backend.SVG.CmdLine
 import           Diagrams.Prelude
+
 import           System.Random
 
 type Dia = Diagram B R2
@@ -16,15 +18,15 @@ sizeValue = getRandomR (0.05, 0.25)
 coordValue :: (RandomGen g) => Rand g Double
 coordValue = getRandomR (-0.5, 0.5)
 
--- Generate a random set of confettin to use as the object in the
+-- Generate a random set of confetti to use as the object in the
 -- kaleidescope.
 confetti :: Int -> Rand StdGen Dia
 confetti n = do
-  ss <- replicateM n sizeValue
-  cs <- replicateM n getRandom
-  as <- replicateM n getRandom
-  xs <- replicateM n coordValue
-  ys <- replicateM n coordValue
+  ss <- replicateM n sizeValue   -- radius
+  cs <- replicateM n getRandom   -- color index
+  as <- replicateM n getRandom   -- opacity
+  xs <- replicateM n coordValue  -- x coordinate
+  ys <- replicateM n coordValue  -- y coordinate
   let mkCirc :: Double -> Int -> Double -> Dia
       mkCirc s c a = circle s # fc (webColors c) # opacity a
       pos = zipWith mkP2 xs ys
@@ -59,7 +61,8 @@ kaleid d = rotateBy (1/12) $ appends hex hexs
 
 kaleidescope :: Int -> Int -> Dia
 kaleidescope n r
-  = kaleid (mkConfetti n (mkStdGen r)) # centerXY
-        <> (circle 2.75 # fc black)  #  pad 1.1
+  = kaleid (mkConfetti n (mkStdGen r))
+          # centerXY <> (circle 2.75 # fc black)
+          # pad 1.1
 
 main = mainWith $ kaleidescope
