@@ -7,10 +7,10 @@ import           Diagrams.Prelude
 type Dia = Diagram B R2
 
 mkTriangle :: Dia -> Dia
-mkTriangle d =
-  d # clipBy (triangle 1)
-    # withEnvelope (triangle 1 :: Dia)
-    # withTrace (triangle 1 :: Dia)
+mkTriangle = clipTo (triangle 1)
+
+clipTo :: Path R2 -> Dia -> Dia
+clipTo p = (withTrace p) . (withEnvelope p) . (clipBy p)
 
 -- Take any diagram and cut out a equilateral triangle of side 1 from the
 -- center. This is the traingle inside of the three mirrors
@@ -23,7 +23,7 @@ kaleid d = rotateBy (1/12) $ appends hex hexs
             (ts !! 2 # centerXY)
          <> (ts !! 1 # rotateBy (1/2) # snugT)
     ts = iterate flipTurn (mkTriangle d)
-    flipTurn d = (d === d # reflectY) # rotateBy (1/6)
+    flipTurn tri = (tri === tri # reflectY) # rotateBy (1/6)
 
 -------------------------------------------------------------------------------
 -- Create a skewed 4 X 10 grid of colors called quads to use as an example
