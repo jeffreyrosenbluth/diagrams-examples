@@ -9,7 +9,7 @@
 
 > type Dia = Diagram B R2
 
-Take any diagram and cut out an equilateral triangle of side 1 from the center. This is the traingle inside of the three mirrors that make up a kaleidescope. The image is created by first repeatedly refecting this triangle to make a hexagon. Then the image plane is tiled with this hexagon.I use a little bit of trickery to create the hexagon of reflected triangles. If you want to see what is really going on, examine the diagrams produced by`ts !! 2` and `ts !! 1`.
+Take any diagram and cut out an equilateral triangle of side 1 from the center. This is the traingle inside of the three mirrors that make up a kaleidescope. The image is created by first repeatedly refecting this triangle to make a hexagon. Then the image plane is tiled with this hexagon.I use a little bit of trickery to create the hexagon of reflected triangles. If you want to see what is really going on, examine the diagrams `ts !! 2` and `ts !! 1`.
 
 > kaleid :: Dia -> Dia
 > kaleid d = rotateBy (1/12) $ appends hex hexs
@@ -28,7 +28,7 @@ Take any diagram and cut out an equilateral triangle of side 1 from the center. 
 > clipTo :: Path R2 -> Dia -> Dia
 > clipTo p = (withTrace p) . (withEnvelope p) . (clipBy p)
 
-We pass as arguments the number of pieces of confetti `n` and a random seed `r`. Between 20 and 100 seems to be nice.
+We pass as arguments the number of pieces of confetti `n` and a random seed `r`. Between 10 and 100 pieces seem to work nicely.
 
 > kaleidescope :: Int -> Int -> Dia
 > kaleidescope n r
@@ -36,13 +36,15 @@ We pass as arguments the number of pieces of confetti `n` and a random seed `r`.
 >           # centerXY <> (circle 2.75 # fc black)
 >           # pad 1.1
 
-To create and image to use in the kadeidescope we generate a bunch of disks with random location, size, color and opacity. This is the confetti used as the image.
+To create and image to use in the kadeidescope we generate a bunch of disks with random location, size, color and opacity. This is the confetti used as the image. Of course using circles is arbitrary, any shapes and sizes will do.
 
 > sizeValue :: (RandomGen g) => Rand g Double
 > sizeValue = getRandomR (0.05, 0.25)
 
 > coordValue :: (RandomGen g) => Rand g Double
 > coordValue = getRandomR (-0.5, 0.5)
+
+We use monadRandom to hide the plumbing of the many random numbers we need. The colors are choosen from the 330+ `webColors` from the package `Data.Colour.Palette.ColorSet`.
 
 > confetti :: Int -> Rand StdGen Dia
 > confetti n = do
