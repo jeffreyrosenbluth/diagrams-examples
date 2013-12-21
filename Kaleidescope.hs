@@ -1,14 +1,46 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 
+import           Control.Monad (replicateM)
+import           Control.Monad.Random
 import           Data.Colour.Palette.ColorSet
+import           Data.List (zipWith, zipWith3)
 import           Diagrams.Backend.SVG.CmdLine
 import           Diagrams.Prelude
+import           System.Random
 
 type Dia = Diagram B R2
 
+sizeValue :: (RandomGen g) => Rand g Double
+sizeValue = getRandomR (0.05, 0.25)
+
+coordValue :: (RandomGen g) => Rand g Double
+coordValue = getRandomR (-0.5, 0.5)
+
+-- Generate a random set of confettin to use as the object in the
+-- kaleidescope.
+confetti :: Int -> Rand StdGen Dia
+confetti n = do
+  ss <- replicateM n sizeValue
+  cs <- replicateM n getRandom
+  as <- replicateM n getRandom
+  xs <- replicateM n coordValue
+  ys <- replicateM n coordValue
+  let mkCirc :: Double -> Int -> Double -> Dia
+      mkCirc s c a = circle s # fc (webColors c) # opacity a
+      pos = zipWith mkP2 xs ys
+      conf = zipWith3 mkCirc ss cs as
+  return $ position (zip pos conf)
+
+-- Make a confetting diagram and extract it from the monad.
+mkConfetti :: Int -> (StdGen -> Dia)
+mkConfetti n = evalRand $ confetti n
+
+-- Clip a diagram to an equilateral traingle.
 mkTriangle :: Dia -> Dia
 mkTriangle = clipTo (triangle 1)
 
+-- Version of clipBy that take on the trace and envelope of the clippoing
+-- pathe.
 clipTo :: Path R2 -> Dia -> Dia
 clipTo p = (withTrace p) . (withEnvelope p) . (clipBy p)
 
@@ -25,29 +57,9 @@ kaleid d = rotateBy (1/12) $ appends hex hexs
     ts = iterate flipTurn (mkTriangle d)
     flipTurn tri = (tri === tri # reflectY) # rotateBy (1/6)
 
--------------------------------------------------------------------------------
--- Create a skewed 4 X 10 grid of colors called quads to use as an example
--- diagram.
--------------------------------------------------------------------------------
-gr :: Double
-gr = (1 + sqrt 5) / 2 -- golden ratio
+kaleidescope :: Int -> Int -> Dia
+kaleidescope n r
+  = kaleid (mkConfetti n (mkStdGen r)) # centerXY
+        <> (circle 2.75 # fc black)  #  pad 1.1
 
-bar :: [Kolor] -> Dia
-bar [] = centerXY $ square gr # fc black
-bar cs = centerXY $ hcat [square gr # scaleX s # fc k # lw 0 | k <- cs]
-  where s = gr / (fromIntegral (length cs))
-
-grid :: [[Kolor]] -> Dia
-grid [] = centerXY $ square gr # fc black
-grid cs = centerXY $ vcat [bar c # scaleY s | c <- cs]
-  where s = 1 / (fromIntegral (length cs))
-
-d4 :: [[Kolor]]
-d4 = [[d3Colors4 b n | n <- [0..9]] | b <- [Darkest, Dark, Light, Lightest]]
-
-quads :: Dia
-quads = grid d4 # rotateBy (1/7) # scale 0.76
--------------------------------------------------------------------------------
-
-main = mainWith $ kaleid quads # centerXY
-   <> (circle 2.75 # fc black)  #  pad 1.1
+main = mainWith $ kaleidescope
